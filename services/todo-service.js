@@ -15,19 +15,48 @@ module.exports = function module(todos) {
 
   return {
     findAll : function findAll(callback) {
-      // TODO
+      callback(null, todos);
+    },
+
+    findOne : function findOne(id, callback) {
+      for (var i = 0; i < todos.length; ++i) {
+        if (todos[i].id === id) {
+          return callback(null, todos[i]);
+        }
+      }
+      callback(new Error('todo with id ' + id + ' not found'));
     },
 
     addTodo : function addTodo(content, callback) {
-      // TODO
+      var todo = {
+        id : uuid(),
+        content : content
+      };
+
+      todos.push(todo);
+
+      callback(null, todo);
     },
 
     updateTodo : function updateTodo(id, content, callback) {
-      // TODO
+      for (var i = 0; i < todos.length; ++i) {
+        if (id === todos[i].id) {
+          todos[i].content = content;
+          return callback();
+        }
+      }
+
+      callback(new Error('todo with id ' + id + ' not found.'));
     },
 
     deleteTodo : function deleteTodo(id, callback) {
-      // TODO
+      for (var i = 0; i < todos.length; ++i) {
+        if (id === todos[i].id) {
+          todos.splice(i, 1);
+          return callback();
+        }
+      }
+      callback(new Error('todo with id ' + id + ' not found.'));
     }
   };
 };
