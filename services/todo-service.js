@@ -11,11 +11,23 @@ function uuid() {
   return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
 }
 
-module.exports = function module(todos) {
+module.exports = function module(todos, mongoose) {
 
   return {
     findAll : function findAll(callback) {
-      callback(null, todos);
+      // load a listing of to-dos from database if todos is empty
+      if (todos.length > 0) {
+        return callback(null, todos);
+      }
+      mongoose.model('Todo').find({}, function(err, docs) {
+        for (var i = 0; i < docs.length; ++i) {
+          todos.push({
+            id: docs[i]._id.toString(),
+            content: docs[i].content.toString()
+          })
+        }
+        callback(null, todos);
+      });
     },
 
     findOne : function findOne(id, callback) {
@@ -28,32 +40,49 @@ module.exports = function module(todos) {
     },
 
     addTodo : function addTodo(content, callback) {
-      var todo = {
-        id : uuid(),
-        content : content
-      };
-
-      todos.push(todo);
-
-      callback(null, todo);
+      var Todo = mongoose.model('Todo');
+      (new Todo({content: content})).save(function (err, product) {
+        if (err) {
+          callback(new Error(content + ' unsaved'));
+        } else {
+          var todo = {
+            id: product._id.toString(),
+            content: product.content.toString()
+          }
+          todos.push(todo);
+          callback(null, todo);
+        }
+      });
     },
 
     updateTodo : function updateTodo(id, content, callback) {
       for (var i = 0; i < todos.length; ++i) {
         if (id === todos[i].id) {
-          todos[i].content = content;
-          return callback();
+          return mongoose.model('Todo').findOne({_id: id}, function(err, doc) {
+            if (err) {
+              callback(new Error(id + ' unupdated'));
+            } else {
+              doc.content = content;
+              todos[i].content = content;
+              return callback();
+            }
+          });
         }
       }
-
       callback(new Error('todo with id ' + id + ' not found.'));
     },
 
     deleteTodo : function deleteTodo(id, callback) {
       for (var i = 0; i < todos.length; ++i) {
         if (id === todos[i].id) {
-          todos.splice(i, 1);
-          return callback();
+          return mongoose.model('Todo').findOne({_id: id}).remove(function(err) {
+            if (err) {
+              return callback(new Error(id + ' undeleted'));
+            } else {
+              todos.splice(i, 1);
+              return callback(null);
+            }
+          });
         }
       }
       callback(new Error('todo with id ' + id + ' not found.'));

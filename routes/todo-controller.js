@@ -1,8 +1,8 @@
 'use strict';
 
-module.exports = function module(app) {
+module.exports = function module(app, mongoose) {
 
-  var service = require('../services/todo-service.js')(app.locals.todos);
+  var service = require('../services/todo-service.js')(app.locals.todos, mongoose);
 
   return {
     findAll : function findAll(req, res, next) {

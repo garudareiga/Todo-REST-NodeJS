@@ -1,10 +1,10 @@
 'use strict';
 
-module.exports = function module(app) {
+module.exports = function module(app, mongoose) {
 
-  var todoController = require('./todo-controller')(app);
+  var todoController = require('./todo-controller')(app, mongoose);
 
-  // TODO - add routes
+  // WEB routes
   app.get('/', todoController.findAll);
   app.post('/create', todoController.addTodo);
   app.get('/edit/:id', todoController.editTodo);

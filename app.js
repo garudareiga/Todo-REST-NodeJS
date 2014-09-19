@@ -7,6 +7,7 @@ var errorHandler = require('errorhandler');
 var http = require('http');
 var path = require('path');
 var fs = require('fs');
+var mongoose = require('mongoose');
 var app = express();
 
 app.set('port', process.env.PORT || 3000);
@@ -28,11 +29,30 @@ fs.readFile('./todo_db.json', function onRead(err, data) {
     console.log(err);
   }
 
-  app.locals.todos = JSON.parse(data);
+  // app.locals.todos = JSON.parse(data);
+  // use mongodb instead a plain JSON file
+  app.locals.todos = [];
 
-  require('./routes')(app);
+  // mongoose
+  mongoose.connect('mongodb://localhost/tododb');
 
-  http.createServer(app).listen(app.get('port'), function onListening() {
-    console.log('Express server listening on port ' + app.get('port'));
+  var db = mongoose.connection;
+  //db.on('error', console.error.bind(console, 'connection error:'));
+  db.once('open', function() {
+    // Create to-do schema
+    var todoSchema = new mongoose.Schema({
+      id: String,
+      content: String
+    });
+
+    // Store to-do documents in a collection called "todos"
+    mongoose.model('Todo', todoSchema, 'todos');
   });
+  db.on('connected', function() {
+    require('./routes')(app, mongoose);
+
+    http.createServer(app).listen(app.get('port'), function onListening() {
+      console.log('Express server listening on port ' + app.get('port'));
+    });
+  })
 });
